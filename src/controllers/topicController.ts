@@ -5,6 +5,7 @@ import { topics, Topic } from '../models/topic';
 export const createTopic = (req: Request, res: Response, next: NextFunction) => {
   try {
     const { name, content } = req.body;
+
     const newTopic: Topic = {
       id: Date.now(),
       name,
@@ -12,9 +13,11 @@ export const createTopic = (req: Request, res: Response, next: NextFunction) => 
       createdAt: new Date().toString(),
       updatedAt: new Date().toString(),
       version: 1,
-      parentTopicId: 1
+      parentTopicId: req.body.parentTopicId ?? undefined
     };
+
     topics.push(newTopic);
+
     res.status(201).json(newTopic);
   } catch (error) {
     next(error);
@@ -45,18 +48,34 @@ export const getTopicById = (req: Request, res: Response, next: NextFunction) =>
   }
 };
 
-// Update a topic
+// Update a topic (create nenw version)
 export const updateTopic = (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = parseInt(req.params.id, 10);
     const { name } = req.body;
-    const topicIndex = topics.findIndex((i) => i.id === id);
-    if (topicIndex === -1) {
+
+    const oldTopicArray = topics.filter(t => t.id === id)
+
+    if (oldTopicArray.length === 0) {
       res.status(404).json({ message: 'Topic not found' });
       return;
     }
-    topics[topicIndex].name = name;
-    res.json(topics[topicIndex]);
+
+    const oldTopic = oldTopicArray[oldTopicArray.length - 1]
+
+    const newTopic: Topic = {
+      id: oldTopic.id,
+      name: oldTopic.name,
+      content: oldTopic.content,
+      createdAt: oldTopic.createdAt,
+      updatedAt: new Date().toString(),
+      version: oldTopic.version + 1,
+      parentTopicId: oldTopic.parentTopicId ?? undefined
+    };
+
+    topics.push(newTopic)
+
+    res.status(201).json(newTopic)
   } catch (error) {
     next(error);
   }
