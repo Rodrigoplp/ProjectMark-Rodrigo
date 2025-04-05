@@ -1,22 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
-import { topics, Topic } from '../models/topic';
+import { topics, Topic, TopicNode } from '../models/topic';
 import { finder } from '../utils'
 
 // Create a topic
 export const createTopic = (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, content } = req.body;
-
-    const newTopic: Topic = {
-      id: Date.now(),
-      name,
-      content,
-      createdAt: new Date().toString(),
-      updatedAt: new Date().toString(),
-      version: 1,
-      parentTopicId: req.body.parentTopicId ?? undefined
-    };
-
+    const { name, content, parentTopicId } = req.body;
+    const newTopic = new TopicNode(name, content, null, null, null, parentTopicId)
     topics.push(newTopic);
 
     res.status(201).json(newTopic);
@@ -86,8 +76,7 @@ export const getTopicByIdRecursive = (req: Request, res: Response, next: NextFun
 export const updateTopic = (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = parseInt(req.params.id, 10);
-    const { name } = req.body;
-
+    const { name, content, parentTopicId } = req.body;
     const oldTopicArray = topics.filter(t => t.id === id)
 
     if (oldTopicArray.length === 0) {
@@ -96,18 +85,7 @@ export const updateTopic = (req: Request, res: Response, next: NextFunction) => 
     }
 
     const oldTopic = oldTopicArray[oldTopicArray.length - 1]
-
-    const newTopic: Topic = {
-      id: oldTopic.id,
-      name: oldTopic.name,
-      content: oldTopic.content,
-      createdAt: oldTopic.createdAt,
-      updatedAt: new Date().toString(),
-      version: oldTopic.version + 1,
-      parentTopicId: oldTopic.parentTopicId ?? undefined
-    };
-
-    topics.push(newTopic)
+    const newTopic = oldTopic.update(name, content, parentTopicId)
 
     res.status(201).json(newTopic)
   } catch (error) {
