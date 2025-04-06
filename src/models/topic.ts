@@ -57,4 +57,4 @@ export class TopicNode implements Topic {
   }
 }
 
-export const topics: Topic[] = [];
+export const topics: Topic[] = []

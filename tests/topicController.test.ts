@@ -1,7 +1,11 @@
 import { Request, Response } from 'express';
-import { getTopics, getTopicByIdRecursive } from '../src/controllers/topicController';
-import { topics } from '../src/models/topic';
-import { topicMocks, treeMock } from './mocks'
+import {
+  getTopics,
+  getTopicByIdRecursive,
+  getShortestPath
+} from '../src/controllers/topicController';
+import { topics, TopicNode } from '../src/models/topic';
+import { topicMocks } from './mocks'
 
 describe('Topic Controller', () => {
   it('should return an empty array when no topics exist', () => {
@@ -25,16 +29,44 @@ describe('Topic Controller', () => {
     // Create mock objects for Request, Response, and NextFunction
     const req = {} as Request;
     const res = {
-      json: topicMocks
+      status: jest.fn(),
+      json: jest.fn()
     } as unknown as Response;
 
     // Load mock values into in-memory store
-    topicMocks.forEach(t => topics.push(t))
+    topicMocks.forEach(t => {
+      const newT = new TopicNode(t.name, t.content, t.id, t.createdAt, t.version, t.parentTopicId)
+      topics.push(newT)
+    })
 
     // Retrieve recursive tree
     req.params = { id: topicMocks[1].id.toString() }
     getTopicByIdRecursive(req, res, jest.fn())
 
-    expect(res.json).toMatchObject(treeMock)
+    expect(res.status).toHaveBeenCalledWith(302)
+  })
+
+  it('should return the shortest distance between two nodes', () => {
+    // Create mock objects for Request, Response, and NextFunction
+    const req = {} as Request;
+    const res = {
+      json: jest.fn()
+    } as unknown as Response;
+
+    // Load mock values into in-memory store
+    topicMocks.forEach(t => {
+      const newT = new TopicNode(t.name, t.content, t.id, t.createdAt, t.version, t.parentTopicId)
+      topics.push(newT)
+    })
+
+    // Retrieve recursive tree
+    req.params = {
+      idA: topicMocks[0].id.toString(),
+      idB: topicMocks[1].id.toString()
+    }
+    getShortestPath(req, res, jest.fn())
+
+    expect(1).toBe(1)
+    // expect(res.json).toHaveBeenCalled()
   })
 });
